@@ -36,11 +36,17 @@ export interface AppState {
   textModifiers: TextModifiers;
 }
 
-export type WorkItemType = "Task" | "Bug" | "User Story" | "Issue" | "Feature" | "Epic";
+export type WorkItemType =
+  | "Task"
+  | "Bug"
+  | "User Story"
+  | "Issue"
+  | "Feature"
+  | "Epic";
 
 export const WORK_ITEM_TYPES: WorkItemType[] = [
   "Task",
-  "Bug", 
+  "Bug",
   "User Story",
   "Issue",
   "Feature",
@@ -58,7 +64,7 @@ export const REQUIRED_FIELDS: RequiredField[] = [
 
 export const OPTIONAL_FIELDS_MAPPING = {
   assignedTo: "Assigned To",
-  description: "Description", 
+  description: "Description",
   priority: "Priority",
   effort: "Effort",
 } as const;
