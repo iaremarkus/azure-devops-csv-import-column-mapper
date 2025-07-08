@@ -1,4 +1,5 @@
 import { toast } from "sonner";
+import { trackClipboardCopy, trackFileDownload } from "@/lib/posthog";
 
 /**
  * Validates if a file is a CSV file
@@ -10,7 +11,12 @@ export function isValidCSVFile(file: File): boolean {
 /**
  * Downloads CSV content as a file
  */
-export function downloadCSVFile(csvContent: string, rowCount: number): void {
+export function downloadCSVFile(
+  csvContent: string,
+  rowCount: number,
+  fieldCount?: number,
+  customFieldCount?: number,
+): void {
   try {
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
     const link = document.createElement("a");
@@ -28,6 +34,14 @@ export function downloadCSVFile(csvContent: string, rowCount: number): void {
     document.body.removeChild(link);
 
     URL.revokeObjectURL(url);
+
+    // Track the download event
+    trackFileDownload({
+      rowCount,
+      fieldCount: fieldCount || 0,
+      customFieldCount: customFieldCount || 0,
+    });
+
     toast.success(`Downloaded CSV file with ${rowCount} rows`);
   } catch (err) {
     console.error("Failed to download:", err);
@@ -41,9 +55,19 @@ export function downloadCSVFile(csvContent: string, rowCount: number): void {
 export async function copyCSVToClipboard(
   csvContent: string,
   rowCount: number,
+  fieldCount?: number,
+  customFieldCount?: number,
 ): Promise<void> {
   try {
     await navigator.clipboard.writeText(csvContent);
+
+    // Track the clipboard copy event
+    trackClipboardCopy({
+      rowCount,
+      fieldCount: fieldCount || 0,
+      customFieldCount: customFieldCount || 0,
+    });
+
     toast.success(`CSV content copied to clipboard! (${rowCount} rows)`);
   } catch (err) {
     console.error("Failed to copy:", err);

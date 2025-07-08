@@ -28,6 +28,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Separator } from "@/components/ui/separator";
 import {
   Table,
   TableBody,
@@ -41,6 +42,7 @@ import {
   type CSVRow,
   type CustomValues,
   type FieldMapping,
+  OPTIONAL_FIELDS_MAPPING,
   REQUIRED_FIELDS,
   type TextModifiers,
   WORK_ITEM_TYPES,
@@ -79,7 +81,11 @@ export function ADOColumnMapper() {
 
     try {
       const text = await uploadedFile.text();
-      const { headers, rows } = parseCSV(text);
+      const { headers, rows } = parseCSV(
+        text,
+        uploadedFile.name,
+        uploadedFile.size
+      );
 
       setSourceColumns(headers);
       setSourceData(rows.slice(0, 3)); // Show first 3 rows as preview
@@ -175,50 +181,73 @@ export function ADOColumnMapper() {
 
   const copyToClipboard = async (): Promise<void> => {
     const csvContent = generateCSVContent();
-    await copyCSVToClipboard(csvContent, allSourceData.length);
+    const totalFields =
+      Object.keys(OPTIONAL_FIELDS_MAPPING).filter((key) => mappings[key])
+        .length + 2; // +2 for workItemType and title
+    await copyCSVToClipboard(
+      csvContent,
+      allSourceData.length,
+      totalFields,
+      customFields.length
+    );
   };
 
   const downloadCSV = (): void => {
     const csvContent = generateCSVContent();
-    downloadCSVFile(csvContent, allSourceData.length);
+    const totalFields =
+      Object.keys(OPTIONAL_FIELDS_MAPPING).filter((key) => mappings[key])
+        .length + 2; // +2 for workItemType and title
+    downloadCSVFile(
+      csvContent,
+      allSourceData.length,
+      totalFields,
+      customFields.length
+    );
   };
 
   const canGenerate = mappings.title && allSourceData.length > 0;
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      <div className="max-w-6xl mx-auto p-6 space-y-8">
+      <div className="p-6 space-y-8">
         <div className="flex items-center justify-between">
-          <div>
+          <div className="flex flex-col gap-5">
             <h1 className="text-3xl font-bold mb-2">
               Azure DevOps CSV Import Mapper
             </h1>
-            <p className="text-muted-foreground">
+            <p>
               Upload your spreadsheet and map columns to Azure DevOps work item
               fields. This tool will help you create a CSV file that can be
-              imported into Azure DevOps. For more information, see{" "}
+              imported into Azure DevOps.
+            </p>
+
+            <p className="text-muted-foreground flex gap-2">
+              <span>For more information, see</span>
               <a
                 href="https://learn.microsoft.com/en-us/azure/devops/boards/queries/import-work-items-from-csv?view=azure-devops#tree-items"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="underline hover:text-accent transition-colors"
+                className="underline text-orange-500 hover:text-orange-700 inline-flex items-center gap-1 transition-colors"
               >
+                <span className="text-sm">Import work items from CSV</span>
                 <ExternalLink className="h-4 w-4 text-muted-foreground" />
-                <span className="text-sm">
-                  Import work items from CSV (Microsoft Docs)
-                </span>
               </a>
               <a
                 href="https://learn.microsoft.com/en-us/azure/devops/boards/work-items/guidance/work-item-field?view=azure-devops"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="underline hover:text-accent transition-colors"
+                className="underline text-orange-500 hover:text-orange-700 inline-flex items-center gap-1 transition-colors"
               >
+                <span className="text-sm">Work item field reference</span>
                 <ExternalLink className="h-4 w-4 text-muted-foreground" />
-                <span className="text-sm">
-                  Work item field reference (Microsoft Docs)
-                </span>
               </a>
+            </p>
+
+            <Separator />
+
+            <p className=" flex gap-2 items-center">
+              <AlertCircle /> This processing happens in your browser and no
+              data is sent to a server / stored.
             </p>
           </div>
           <ThemeToggle />
@@ -646,7 +675,7 @@ export function ADOColumnMapper() {
                 </CardHeader>
                 <CardContent>
                   <div className="bg-muted p-4 rounded-lg">
-                    <pre className="text-sm whitespace-pre-wrap font-mono">
+                    <pre className="text-sm whitespace-pre-wrap font-mono max-h-80 overflow-y-auto">
                       {generateCSVContent()}
                     </pre>
                   </div>

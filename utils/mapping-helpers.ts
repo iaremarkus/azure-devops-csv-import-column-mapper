@@ -1,4 +1,5 @@
 import type { CustomValues, FieldMapping, TextModifiers } from "@/lib/types";
+import { trackCustomFieldAdded, trackFieldMapping } from "@/lib/posthog";
 
 /**
  * Updates a field mapping and clears related custom values if needed
@@ -8,6 +9,7 @@ export function updateFieldMapping(
   column: string,
   currentMappings: FieldMapping,
   currentCustomValues: CustomValues,
+  trackEvent: boolean = true,
 ): {
   mappings: FieldMapping;
   customValues: CustomValues;
@@ -31,6 +33,22 @@ export function updateFieldMapping(
         [field]: "Task",
       };
     }
+  }
+
+  // Track the field mapping event
+  if (trackEvent) {
+    const mappingType =
+      column === "CUSTOM_VALUE"
+        ? "custom_value"
+        : column.startsWith("DEFAULT:")
+          ? "default_value"
+          : "source_column";
+
+    trackFieldMapping({
+      fieldType: field,
+      mappingType,
+      isRequired: field === "workItemType" || field === "title",
+    });
   }
 
   return { mappings, customValues };
@@ -88,6 +106,12 @@ export function addCustomField(
     ...currentMappings,
     [fieldName]: "CUSTOM_VALUE",
   };
+
+  // Track the custom field addition
+  trackCustomFieldAdded({
+    fieldName: fieldName.trim(),
+    totalCustomFields: customFields.length,
+  });
 
   return { customFields, mappings };
 }

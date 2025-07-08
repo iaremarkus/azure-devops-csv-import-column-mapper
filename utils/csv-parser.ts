@@ -1,4 +1,5 @@
 import type { CSVRow, FieldMapping } from "@/lib/types";
+import { trackFileUploaded } from "@/lib/posthog";
 
 export interface ParsedCSV {
   headers: string[];
@@ -8,7 +9,11 @@ export interface ParsedCSV {
 /**
  * Parses CSV text into headers and rows
  */
-export function parseCSV(text: string): ParsedCSV {
+export function parseCSV(
+  text: string,
+  filename?: string,
+  fileSize?: number,
+): ParsedCSV {
   const lines = text.split("\n").filter((line) => line.trim());
 
   if (lines.length === 0) {
@@ -26,6 +31,16 @@ export function parseCSV(text: string): ParsedCSV {
     });
     return row;
   });
+
+  // Track the file upload event
+  if (filename && fileSize !== undefined) {
+    trackFileUploaded({
+      filename,
+      fileSize,
+      rowCount: rows.length,
+      columnCount: headers.length,
+    });
+  }
 
   return { headers, rows };
 }
